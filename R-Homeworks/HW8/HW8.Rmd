@@ -1,0 +1,226 @@
+---
+title: "HW8"
+author: "Natalie Brewer"
+date: "2023-11-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+## Problem 8A
+
+```{r}
+grades <- matrix (c(8, 15, 13,
+                  14, 19, 15,
+                  15, 4, 7,
+                  3, 1, 4), nrow = 4, byrow = TRUE)
+colnames(grades) <- c("Pysch", "Bio", "Other")
+rownames(grades) <- c("A", "B", "C", "D-F")
+grades
+
+chitest <- chisq.test(grades)
+chitest
+chitest$expected
+```
+
+## Problem 8B
+```{r}
+drugs <- matrix(c( 165, 95,
+                   152, 52,
+                   85, 52,
+                   67, 35,
+                   85, 37), nrow=5, byrow=TRUE)
+
+drugs <- cbind(drugs, drugs[,1] - drugs[,2])
+rownames(drugs) <- c("Placebo","Chlorpromazine","Dimenhydrinate","Pentobarbital 100","Pentobarbital 150")
+colnames(drugs) <- c("Patients", "Nausea", "No Nausea")
+drugs
+
+# Compare drugs to eachother
+chitest_B <- chisq.test(drugs[2:5,2:3])
+chitest_B
+
+# Compare drugs to placebo
+
+test_chlor <- chisq.test(drugs[1:2, 2:3], correct=FALSE) # Chlorpromazine
+test_dimen <- chisq.test(drugs[c(1,3), 2:3], correct=FALSE) # Dimenhydrinate
+test_pento100 <- chisq.test(drugs[c(1,4), 2:3], correct=FALSE) # Pentobarbital 100
+test_pento150 <- chisq.test(drugs[c(1,5), 2:3], correct=FALSE) # Pentobarbital 150
+
+all_tests <- matrix(c(test_chlor$statistic, test_dimen$statistic, test_pento100$statistic, test_pento150$statistic, 
+                      test_chlor$p.value, test_dimen$p.value, test_pento100$p.value, test_pento150$p.value), nrow=2, byrow=TRUE)
+colnames(all_tests) <- c("Chlorpromazine","Dimenhydrinate","Pentobarbital 100","Pentobarbital 150")
+rownames(all_tests) <- c("Statistic", "p value")
+all_tests
+```
+
+
+## Problem 8D
+```{r}
+B = 10000
+
+fun <- function() {
+  x1 <- rnorm(1)
+  y <- rnorm(2, mean=1)
+  p <- prod(y<x1)
+}
+
+vec <- replicate(B, fun())
+mean(vec)
+```
+
+## Problem 8E
+```{r}
+heat_data <- read.table("/Users/nataliebrewer/Desktop/Stat 135/HW8/11.29.txt", sep= " ")
+heat_df <- data.frame(heat_data)
+heat_df <- heat_df[-1,]
+heat_df$V1 <- as.numeric(heat_df$V1)
+heat_df$V2 <- as.numeric(heat_df$V2)
+head(heat_df)
+
+xbar_diff <- 80.02 - 79.98
+
+get_xbar_diff <- function() {
+  indices <- sample(1:21, 8)
+  xbarA <- mean(heat_df[-indices, 1])
+  xbarB <- mean(heat_df[indices, 1])
+  diff <- xbarA - xbarB
+  return(diff)
+}
+
+partitions <-  data.frame(diff=replicate(1000, get_xbar_diff()))
+
+ggplot(partitions, aes(x=diff)) +
+  geom_histogram(aes(y=after_stat(density)), fill="lightblue", color="black",binwidth=0.005) +
+  geom_vline(aes(xintercept = xbar_diff), color = "red", linetype = "dashed", linewidth = 1) +
+  labs(title="Distribution of Xbar_A minus Xbar_B",
+       x="Difference",
+       y="Density") +
+  theme_minimal()
+```
+
+## Problem 8F
+```{r}
+mice_data <- read.table("/Users/nataliebrewer/Desktop/Stat 135/HW8/11.40.txt", sep= " ")
+mice_df <- data.frame(mice_data)
+mice_df <- mice_df[-1,]
+mice_df$V1 <- as.numeric(mice_df$V1)
+mice_df$V2 <- as.numeric(mice_df$V2)
+mice_df
+
+ggplot(mice_df) +
+  geom_dotplot(aes(x=mice_df$V1))+
+  labs(title="Dotplot of Weight Gain of Treatment Group",
+       x="Weight Gain") +
+  xlim(5, 30) +
+  theme_minimal()
+
+ggplot(mice_df) +
+  geom_dotplot(aes(x=mice_df$V2))+
+  labs(title="Dotplot of Weight Gain of Control Group",
+       x="Weight Gain") +
+  xlim(5, 30) +
+  theme_minimal()
+```
+
+## Problem 8G
+```{r}
+# Part b
+xbar <- mean(mice_df$V1)
+xbar
+ybar <- mean(mice_df$V2)
+ybar
+xbar_minus_ybar <- xbar - ybar
+xbar_minus_ybar
+
+var_x <- var(mice_df$V1)
+var_x
+var_y <- var(mice_df$V2)
+var_y
+
+pooled_sd <- sqrt((9*var_x + 9*var_y)/(18))
+sd_diff <- pooled_sd * sqrt(2/10)
+sd_diff
+
+CI <- c(xbar_minus_ybar + (qt(.025,18)*sd_diff), xbar_minus_ybar - (qt(.025,18)*sd_diff))
+CI
+
+# Part c
+test_result <- t.test(mice_df$V1, mice_df$V2, var.equal = TRUE)
+test_result
+```
+
+## Problem 8H 
+```{r}
+MW_test <- wilcox.test(mice_df$V1, mice_df$V2)
+MW_test
+```
+
+## Problem 8I
+```{r}
+# Part a
+bodytemps <- read.table("/Users/nataliebrewer/Desktop/Stat 135/HW8/bodytemp.txt", sep= " ")
+bodytemps_df <- data.frame(bodytemps)
+bodytemps_df <-  bodytemps_df[-1,]
+bodytemps_df$V1 <- as.numeric(bodytemps_df$V1)
+bodytemps_df$V2 <- as.numeric(bodytemps_df$V2)
+bodytemps_df$V3 <- as.numeric(bodytemps_df$V3)
+colnames(bodytemps_df) <- c("temp","gender","rate")
+head(bodytemps_df)
+
+xbar_m <- mean(bodytemps_df$temp[bodytemps_df$gender == 1])
+xbar_f <- mean(bodytemps_df$temp[bodytemps_df$gender == 2])
+m_minus_f <- xbar_m - xbar_f
+m_minus_f
+
+var_m <- var(bodytemps_df$temp[bodytemps_df$gender == 1])
+var_m
+var_f <- var(bodytemps_df$temp[bodytemps_df$gender == 2])
+var_f
+
+mf_pooled_sd <- sqrt((64*var_m + 64*var_f)/(128))
+sd_mf <- mf_pooled_sd * sqrt(2/65)
+sd_mf
+
+CI_mf <- c(m_minus_f + (qt(.025,128)*sd_mf), m_minus_f - (qt(.025,128)*sd_mf))
+CI_mf
+
+
+# Part b
+xbar_m_rate <- mean(bodytemps_df$rate[bodytemps_df$gender == 1])
+xbar_f_rate <- mean(bodytemps_df$rate[bodytemps_df$gender == 2])
+rate_diff <- xbar_m_rate - xbar_f_rate
+rate_diff
+
+var_m_rate <- var(bodytemps_df$rate[bodytemps_df$gender == 1])
+var_m_rate
+var_f_rate <- var(bodytemps_df$rate[bodytemps_df$gender == 2])
+var_f_rate
+
+sd_diff_rate <- sqrt((var_m_rate/65) + (var_f_rate/65))
+sd_diff_rate
+
+degfree <- t.test(bodytemps_df$rate[bodytemps_df$gender == 1], bodytemps_df$rate[bodytemps_df$gender == 2])$parameter
+degfree
+
+CI_rate <- c(rate_diff + (qt(.025,degfree)*sd_diff_rate), rate_diff - (qt(.025,degfree)*sd_diff_rate))
+CI_rate
+
+
+# Part c
+
+# t test for temperature
+t.test(bodytemps_df$temp[bodytemps_df$gender == 1], bodytemps_df$temp[bodytemps_df$gender == 2])
+
+# Mann Whitney for temperature
+wilcox.test(bodytemps_df$temp[bodytemps_df$gender == 1], bodytemps_df$temp[bodytemps_df$gender == 2])
+
+# t test for rate
+t.test(bodytemps_df$rate[bodytemps_df$gender == 1], bodytemps_df$rate[bodytemps_df$gender == 2])
+
+# Mann Whitney for rate
+wilcox.test(bodytemps_df$rate[bodytemps_df$gender == 1], bodytemps_df$rate[bodytemps_df$gender == 2])
+```

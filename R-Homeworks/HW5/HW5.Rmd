@@ -1,0 +1,161 @@
+---
+title: "HW5"
+author: "Natalie Brewer"
+date: "2023-09-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(tidyr)
+```
+
+## Problem 5A
+```{r}
+#sampling distribution for xbar
+exp_xbar = 0
+exp_sd = sqrt(100/25)
+
+x_values <- seq(-10, 10, length.out = 100) 
+y_values <- dnorm(x_values, exp_xbar, exp_sd) #calculate density for the x values
+
+df <- data.frame(x = x_values, y = y_values)
+
+ggplot(df, aes(x, y)) +
+  geom_line(color = "blue") + 
+  ggtitle("Sampling Distribution of X bar") +
+  xlab("X") +  
+  ylab("Density")  
+
+#sampling distribution for sigma hat squared
+x2_values <- seq(0,200, length.out = 100) 
+y2_values <- dchisq(x2_values/4, 24)
+
+df2 <- data.frame(x2 = x2_values, y2 = y2_values)
+
+ggplot(df2, aes(x2, y2)) +
+  geom_line(color = "blue") + 
+  ggtitle("Sampling Distribution of sigma hat squared") +
+  xlab("X") +  
+  ylab("Density")  
+```
+
+## Problem 5D
+```{r}
+sample <- read.table("/Users/nataliebrewer/Desktop/Stat 135/HW5/data.8.32.txt", sep=",")$V1
+sample
+
+#MLEs
+xbar <- mean(sample)
+xbar
+
+
+s2 <- sum((sample - xbar)^2) / 15
+var_MLE <- (15/16) * s2
+var_MLE
+
+#CI for mu
+t <- qt(1 - .1/2, 15)
+
+CI_mu <-c(xbar - (t*sqrt(s2 / 16)), xbar + (t*sqrt(s2 / 16)))
+CI_mu
+
+#CI for sigma squared
+chi_right <- qchisq(.1/2, 15)
+chi_left <- qchisq(1-.1/2, 15)
+
+CI_var <- c((16*var_MLE)/chi_left, (16*var_MLE)/chi_right)
+CI_var
+
+#CI for sigma 
+CI_sigma <- c(sqrt((16*var_MLE)/chi_left), sqrt((16*var_MLE)/chi_right))
+CI_sigma
+```
+
+
+## Problem 5G
+```{r}
+scores <- read.table("/Users/nataliebrewer/Desktop/Stat 135/HW5/data.scores.txt", sep=" ")
+colnames(scores) <- c("final", "midterm") #rename columns
+scores <- scores[, c(2, 1)] #switch order of the columns
+scores <- scores[-1, ] #remove first row to prevent NAs
+scores$final <- as.numeric(scores$final) #convert strings to numbers
+scores$midterm <- as.numeric(scores$midterm) #convert strings to numbers
+scores <- scores[scores$final > 0 & scores$midterm > 0, ] # remove non-positive rows
+scores$midterm <-  scores$midterm * 2 #multiply all midterm scores by 2
+head(scores)
+
+#Histogram for midterm scores
+ggplot(scores, aes(x=midterm)) +
+  geom_histogram(aes(y=after_stat(density)), binwidth = 1) +
+  labs(title="Midterm Results", x="Score", y="Density") +
+  scale_x_continuous(breaks=seq(min(scores$midterm), max(scores$midterm), by=1)) + 
+  theme_minimal()
+
+#Histogram for final scores
+ggplot(scores, aes(x=final)) +
+  geom_histogram(aes(y=after_stat(density)), binwidth = 1) +
+  labs(title="Final Results", x="Score", y="Density") +
+  scale_x_continuous(breaks=seq(min(scores$midterm), max(scores$midterm), by=1)) + 
+  theme_minimal()
+
+#Convert data to narrow format
+scores_narrow <-  scores %>%
+  gather(key= when, value = score, `midterm`, `final`)
+head(scores_narrow)
+
+#Boxplot for midterm and final scores
+ggplot(scores_narrow, aes(x = factor(when), y = score)) + 
+  geom_boxplot() + 
+  xlab("Exam") + 
+  ylab("Score") + 
+  ggtitle("Boxplot of midterm and final scores")
+```
+
+By comparing these two boxplots, we can make the following observations about the data. Firstly, we can see that the median score for the final was higher than the median score for the midterm. We can also see that the midterm scores exhibit a slightly larger spread. For the final scores, the lower quartile is much further than the upper quartile from the median. As for the midterm, the upper quartile is slightly further from the median than the lower quartile.
+
+## Problem 5H
+```{r}
+normal_sample <- rnorm(500, 10, 3)
+qqnorm(normal_sample)
+```
+
+This plot appears to be approximately linear.
+
+```{r}
+qqnorm(scores$final)
+```
+
+This plot appears to be less linear than the previous plot. The final scores data plotted has slight concavity in the curvature meaning many of the scores are higher than the quantiles of the standard normal.This aligns with our observations from the boxplot, which as median that is closer to the upper quantile, making the data slightly upwards skewed.
+
+## Problem 5I
+```{r}
+stem(scores$final, scale=0.5)
+stem(scores$final, scale=2)
+```
+
+I think that both of these plots give useful insight into the nature of the distribution of the data. The 0.5 scale stem and leaf is useful for getting a very compressed view of the data. We can easily see that the range containing the most data values is 30 to 34, since this is the longest leaf. The second stem and leaf gives a more detailed view of the data. We can see exactly how many students received each score as well as the overall, rough way the scores are distributed. It is also easy to note slight abnormalities like the peculiarly high frequency of 15s. However, this plot is not as efficient at compressing the data into a succint summary. 
+
+## Problem 5J
+```{r}
+#Plot the midterm on x axis and final on the y axis
+
+ggplot(scores, aes(x=midterm,y=final)) +
+  geom_point() +
+  geom_abline(slope=1, intercept=0) +
+  ggtitle("Midterm vs. Final Scores") +
+  xlab("Midterm") +  
+  ylab("Final") 
+```
+
+Just from eyeballing this plot, it looks like more than 50% students gained from this grading scheme. This is because there are more students whose final score was greater than twice their midterm score (i.e. more data points lying above the x = y line).
+
+```{r}
+percentage <- (sum(scores$final > scores$midterm) / nrow(scores)) * 100
+percentage
+```
+
+This is consistent with my eyeballed estimate.
+
+To try and estimate final score based on midterm score using a straight line, I would use a line with a steeper slope. This is because the current line has less than 50% of the data points below it, so a steeper line would split the data more evenly in two. A flatter slope would just result in more of the data lying above the estimate. A line with a slightly higher y-intercept would also result in more of the data lying beneath the line.

@@ -1,0 +1,130 @@
+---
+title: "HW3"
+author: "Natalie Brewer"
+date: "2023-09-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+## Problem 3F
+
+```{r 3F}
+digits = c(3,0,3,6,3,7,9,0,7,2)
+SID <- data.frame(digits)
+
+ggplot(SID, aes(x=digits)) +
+  geom_histogram(aes(y=after_stat(density)), binwidth = 1) +
+  labs(title="Density of Student ID Numbers", x="Digit", y="Density") +
+  scale_x_continuous(breaks=seq(min(digits), max(digits), by=1)) + 
+  theme_minimal()
+
+#Find mean
+mean <- mean(digits)
+mean
+#Find standard deviation
+sd <- sd(digits)
+sd
+```
+
+## Problem 3G
+```{r 3G}
+sample <- sample(digits, 400, replace=TRUE)
+sample
+
+sampleMean <- mean(sample)
+sampleMean
+
+standardError <- sd/sqrt(400)
+standardError
+```
+The mean of the sampling distribution is the population mean, 4.
+
+The standard error is $$\frac{\sqrt{\sigma^2}}{\sqrt{n}} = \frac{3.0912}{\sqrt{400}} = 0.155$$
+
+```{r}
+x_vals <- seq(3.5, 4.5, by=0.001)
+df <- data.frame(x=x_vals, y=dnorm(x_vals, mean=mean, sd=standardError))
+
+ggplot(df, aes(x=x, y=y)) +
+  geom_line(color="blue", linewidth=1.2) +
+  labs(title="Sampling Distribution", x="x", y="Density") +
+  theme_minimal()
+```
+
+## Problem 3H
+```{r 3H}
+find_avg <- function(){
+  resample <- sample(digits, size = 400, replace = T)
+  xbar <- mean(resample)
+  xbar
+}
+
+sampleMeanVec <- replicate(100, find_avg())
+sampleMeanVec
+
+sampleMeanDf <- data.frame(sampleMeanVec)
+
+ggplot(sampleMeanDf, aes(x=sampleMeanVec)) +
+  geom_histogram(aes(y=after_stat(density)), binwidth = .05) +
+  labs(title="Sample Means Histogram", x="Sample Mean", y="Count") +
+  scale_x_continuous(breaks=seq(3.5, 4.5, by=.1)) + 
+  stat_function(fun = dnorm, args = list(mean = mean, sd =standardError), color = "blue", linewidth = 1.5) +
+  theme_minimal()
+```
+
+## Problem 3I
+```{r 3I}
+CIs <- data.frame(lower = c(), upper = c())
+
+find_CI <- function(mean, width){
+  z <- qnorm(1-((100-width)/200))
+  
+  lower <- mean - (z*standardError)
+  upper <- mean + (z*standardError)
+  
+  return(list(lower = lower, upper = upper))
+}
+
+for (i in sampleMeanVec){
+  CIs <- rbind(CIs, find_CI(i,95))
+}
+
+CIs
+```
+
+```{r}
+count <- 0  #this will be the number of intervals containing the actual population mean 
+
+for (i in 1:nrow(CIs)){
+  lower <- CIs[i,1]
+  upper <- CIs[i,2]
+  if((mean > lower) && (mean < upper)){
+    count <- count + 1
+  }
+}
+count
+```
+
+
+
+## Problem 3J
+The probability that each interval contains the actual parameter is 95%. This is a Bernouli trial with p = .95. When we take 100 samples and look at the confidence interval determined by each, the distribution is Binomial(100, .95).
+E(G) = np = 95
+SE(G) = np(1-p) = 4.75
+```{r 3J}
+df <- data.frame(x = 0:100, probabilities = dbinom(0:100, size = 100, prob = 0.95))
+
+ggplot(df, aes(x = x, y = probabilities)) +
+  geom_col(fill = "lightblue", color = "black") + 
+  geom_vline(aes(xintercept = count), color = "red", linetype = "dashed", size = 1) +
+  labs(title = "Binomial Distribution of G", x = "Intervals containing parameter", y = "Probability") +
+  theme_minimal()
+```
+Based on my values for E(G) and SE(G), the placement of the vertical line from part 3I makes sense. It is close to the mean.
+
+
+

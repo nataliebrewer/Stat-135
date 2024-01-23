@@ -1,0 +1,77 @@
+---
+title: "HW6"
+author: "Natalie Brewer"
+date: "2023-10-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(tidyr)
+```
+
+## Problem 6A
+part b)
+```{r}
+df <- data.frame(x = seq(0, 1, by=0.01))
+df$y <- 1 - pnorm((6.05 - (10*df$x))/sqrt(df$x - (df$x)^2)) + pnorm((3.95 - (10*df$x))/sqrt(df$x - (df$x)^2))
+
+ggplot(df, aes(x=x, y=y)) + 
+  geom_line() + 
+  ggtitle("Power for different values of p") +
+  xlab("p") + 
+  ylab("Power")
+```
+
+## Problem 6B
+```{r}
+b_df <- data.frame(mu = seq(-10, 10, by=0.01))
+b_df$y10 <- 1 + pnorm(qnorm(.10/2) - ((b_df$mu)/2)) - pnorm(qnorm(1 -.10/2) - ((b_df$mu)/2))
+b_df$y05 <- 1 + pnorm(qnorm(.05/2) - ((b_df$mu)/2)) - pnorm(qnorm(1- .05/2) - ((b_df$mu)/2))
+head(b_df)
+
+ggplot(b_df) + 
+  geom_line(aes(x=mu, y=y10), color="red") + 
+  geom_line(aes(x=mu, y=y05), color="blue") + 
+  ggtitle("Power for different values of mu") +
+  xlab("mu") + 
+  ylab("Power")
+```
+
+## Problem 6F
+```{r}
+#Part d
+sum <- 0
+for (i in 3:7) {
+  sum <- sum + choose(10, i)*(0.5^10)
+}
+
+alpha <- 1 - sum
+alpha
+
+#Part e
+1 - pbinom(60, 100,0.5) + pbinom(40,100,0.5)
+```
+
+
+## Problem 6G
+```{r}
+smoker_data <- read.table("/Users/nataliebrewer/Desktop/Stat 135/HW6/6G_data.csv", sep=",")
+smoker_vec <- c(smoker_data$V1)
+smoker_vec
+
+xbar <- mean(smoker_vec)
+xbar
+
+sd <- sd(smoker_vec)
+sd
+
+test_stat <- (xbar - 100)/(sd/sqrt(20))
+test_stat
+
+```
+
+```{r}
+
+```

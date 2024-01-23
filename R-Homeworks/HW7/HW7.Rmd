@@ -1,0 +1,152 @@
+---
+title: "HW7"
+author: "Natalie Brewer"
+date: "2023-10-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+## Problem 7A
+
+```{r}
+pval <- 1 - pchisq(2.015, 2)
+pval
+```
+
+## Problem 7B
+```{r}
+men_data <- c(3755, 3251, 3777, 3706, 3717, 3660, 3669, 3626, 3481, 3590, 3605, 3392)
+ts_men <- sum(((men_data - 3602.42)^2)/3602.42)
+ts_men
+pval_men <- 1 - pchisq(ts_men, 11)
+pval_men
+
+wom_data <- c(1362, 1244, 1496, 1452, 1448, 1376, 1370, 1301, 1337, 1351, 1416, 1226)
+ts_wom <- sum(((wom_data - 1364.92)^2)/1364.92)
+ts_wom
+pval_wom <- 1 - pchisq(ts_wom, 11)
+pval_wom
+```
+
+## Problem 7C
+
+```{r}
+matrix <- matrix(c(790, 56, 21,
+                    98, 11, 7,
+                    209, 27, 12), nrow = 3, byrow = TRUE)
+rownames(matrix) <- c("employed", "unemployed", "not in labor force")
+colnames(matrix) <- c("married", "once married", "never married")
+matrix
+
+chisq_test <- chisq.test(matrix)
+print(chisq_test)
+
+print(chisq_test$expected)
+```
+
+## Problem 7D
+
+```{r}
+# Calculate the TS using the first technique
+first_TS <- sum((matrix - chisq_test$expected)^2/chisq_test$expected)
+first_TS
+
+# Calculate the TS using the second technique
+second_TS <- 2*sum(matrix*log(matrix/chisq_test$expected))
+second_TS
+```
+
+## Problem 7E
+
+```{r}
+n <- sum(matrix)
+n
+
+prop_unemp <- (56 + 11 + 27)/n
+prop_unemp
+
+est_sd <- sqrt(prop_unemp*(1 - prop_unemp)/n)
+est_sd
+
+CI <- c(prop_unemp - (1.96 * est_sd), prop_unemp + (1.96 * est_sd))
+CI
+
+```
+## Problem 7F
+
+```{r}
+
+prop_employed <- (790+98+209)/n
+prop_employed
+
+diff <- prop_employed - prop_unemp
+diff
+
+s <- sqrt((prop_unemp*(1 - prop_unemp) + prop_unemp*(1 - prop_unemp))/n)
+s
+
+CI_diff <- c(diff - (1.96 * s), diff + (1.96 * s))
+CI_diff
+
+```
+## Problem 7H
+
+```{r}
+set.seed(34)
+sample <- rbinom(1000, 5, 0.4)
+
+p_hat <- mean(sample)/5 # This is the MLE for binomial
+
+obs_counts <- table(sample)
+obs_counts
+exp_counts <- 1000 * dbinom(0:5, 5, p_hat) # n * P(p_hat)
+exp_counts
+
+test <- chisq.test(obs_counts, p = exp_counts/sum(exp_counts))
+test
+```
+
+## Problem 7I
+
+```{r}
+repeat_test <- function() {
+  new_sample <- rbinom(1000, 5, 0.4)
+  new_p_hat <- mean(new_sample)/5
+    
+  new_obs_counts <- table(new_sample)
+  new_exp_counts <- 1000 * dbinom(0:5, 5, new_p_hat)
+  
+  new_test_X <- 2*sum(new_obs_counts*log(new_obs_counts/new_exp_counts))
+  new_test_Y <- unname(chisq.test(new_obs_counts, p = new_exp_counts/sum(new_exp_counts))$statistic)
+  
+  return(c(new_test_X, new_test_Y))
+}
+
+results <- replicate(2000, repeat_test())
+
+df <- data.frame(X = results[1,], Y = results[2,])
+head(df)
+
+x_values <- seq(0, 20, length.out = 2000)
+y_values <- dchisq(x_values, 5)
+
+ggplot(df, aes(x=X)) +
+  geom_histogram(aes(y=after_stat(density)), fill="lightblue", color="black", bins=30) +
+  geom_line(aes(x=x_values, y=y_values), color="red", linewidth=1) +  # Adding the chi-square curve
+  labs(title="Distribution of Chi-Squared Test Statistic X",
+       x="Test Stat Value",
+       y="Density") +
+  theme_minimal()
+
+ggplot(df, aes(x=Y)) +
+  geom_histogram(aes(y=after_stat(density)), fill="lightblue", color="black", bins=30) +
+  geom_line(aes(x=x_values, y=y_values), color="red", linewidth=1) +  # Adding the chi-square curve
+  labs(title="Distribution of Chi-Squared Test Statistic Y",
+       x="Test Stat Value",
+       y="Density") +
+  theme_minimal()
+```

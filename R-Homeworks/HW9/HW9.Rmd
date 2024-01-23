@@ -1,0 +1,139 @@
+---
+title: "HW9"
+author: "Natalie Brewer"
+date: "2023-11-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyr)
+library(ggplot2)
+```
+
+## Problem 9A (12.26)
+
+```{r}
+dogs_data <- read.table("/Users/nataliebrewer/Desktop/Stat 135/HW9/dogs.txt", sep=" ")
+dogs_df <- data.frame(dogs_data)
+dogs_df
+
+T1 <- unname(unlist(dogs_df[1,]))
+T2 <- unname(unlist(dogs_df[2,]))
+T3 <- unname(unlist(dogs_df[3,]))
+
+groups <- c(rep("T1",10),rep("T2",10),rep("T3",10))
+treatments <- c(T1,T2,T3)
+dogs_tidy <- data.frame(groups,treatments)
+head(dogs_tidy)
+
+dogs_tidy %>% ggplot(aes(x=groups,y=treatments)) + geom_boxplot()
+qqnorm(T1)
+qqnorm(T2)
+qqnorm(T3)
+```
+
+1) F Test
+
+```{r}
+# Worked out by hand
+I=3
+J=10
+
+mean_T1 <- mean(T1)
+mean_T2 <- mean(T2)
+mean_T3 <- mean(T3)
+c(mean_T1, mean_T2, mean_T3)
+
+mean_tot <- mean(treatments)
+mean_tot
+
+var_T1 <- var(T1)
+var_T2 <- var(T2)
+var_T3 <- var(T3)
+c(var_T1, var_T2, var_T3)
+
+SSW <- (J-1) * (var_T1 + var_T2 + var_T3)
+SSW
+SSB <- J * ((mean_T1 - mean_tot)^2 + (mean_T2 - mean_tot)^2 + (mean_T3 - mean_tot)^2)
+SSB
+
+F <- (SSB/(I-1)) / (SSW/(I*(J-1)))
+F
+
+1 - pf(F,2,27)
+
+# Check answer with R
+oneway.test(treatments~groups,var.equal = TRUE)
+```
+2) Bonferroni Test
+
+```{r}
+# Just use R
+pairwise.t.test(dogs_tidy$treatments,dogs_tidy$groups,p.adjust="none" )
+```
+We compare these value with alpha/3 = 0.017
+
+Based on the F-test and the Bonferroni test, there appear to be differences between the effects of the three treatments. Specifically, there is a difference between T3, which is Cyclopropane, and the other two groups.
+
+3) Non-parametric: Kruskal Wallis Test
+
+```{r}
+# Just use R
+kruskal.test(treatments~groups)
+```
+
+Based on the Kruskal-Wallis test, we would fail to reject the null hypothesis if using a significance level lower that 0.05. Otherwise, we would conclude that there is no difference between the treatments.
+
+## Problem 9B (12.27)
+```{r}
+AJ <- unname(unlist(read.table("/Users/nataliebrewer/Desktop/Stat 135/HW9/aj.txt", sep=" ")))
+C57 <- unname(unlist(read.table("/Users/nataliebrewer/Desktop/Stat 135/HW9/c57.txt", sep=" ")))
+F2 <- unname(unlist(read.table("/Users/nataliebrewer/Desktop/Stat 135/HW9/f2.txt", sep=" ")))
+
+mice_treatments <- c(AJ, C57, F2)
+mice_groups <- c(rep("AJ",length(AJ)), rep("C57",length(C57)), rep("F2",length(F2)) )
+
+mice_tidy <- data.frame(mice_groups,mice_treatments)
+head(mice_tidy)
+
+# Boxplots
+mice_tidy %>% ggplot(aes(x=mice_groups,y=mice_treatments)) + geom_boxplot()
+
+# Bonferroni test
+pairwise.t.test(mice_tidy$mice_treatments,mice_tidy$mice_groups,p.adjust="bonferroni" )
+
+```
+
+Since we used the bonferroni adjusment for the p-values, we compare these results with the alpha level 0.05.
+
+Because the p values are all below 0.05, we reject the null hypothesis and conclude that there are significant differences between the species of mice.
+
+## Problem 9C (12.28)
+```{r}
+
+Typ1 <- c(1.7, 1.9, 6.1, 12.5, 16.5, 25.1, 30.5, 42.1, 82.5)
+Typ2 <- c(13.6, 19.8, 25.2, 46.2, 46.2, 61.1)
+Typ3 <- c(13.4, 20.9, 25.1, 29.7, 46.9)
+
+watch_results <- c(Typ1, Typ2, Typ3)
+watch_types <- c(rep("Typ1",length(Typ1)), rep("Typ2",length(Typ2)), rep("Typ3",length(Typ3)) )
+
+watch_tidy <- data.frame(watch_types,watch_results)
+head(watch_tidy)
+
+# Boxplots
+watch_tidy %>% ggplot(aes(x=watch_types,y=watch_results)) + geom_boxplot()
+
+# F test
+oneway.test(watch_results~watch_types,var.equal = TRUE)
+
+# Bonferroni test
+pairwise.t.test(watch_tidy$watch_results,watch_tidy$watch_types,p.adjust="bonferroni")
+
+# Kruskal Wallis test
+kruskal.test(watch_results~watch_types)
+```
+
+Based on the results of both the parametric and nonparametric tests, we fail to reject the null hypothesis and conclude that the watch types are not significantly different.
